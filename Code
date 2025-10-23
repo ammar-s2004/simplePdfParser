@@ -1,0 +1,49 @@
+import pdfplumber
+import re
+
+pdf_file = r"C:\Users\Ammar\Downloads\creditCardStatement.pdf"
+
+def extract_data(text):
+    #Account Number 
+    acc_pattern = r'Account Number:\s*([\d\-]+)'
+    acc_match = re.search(acc_pattern, text)
+    account_number = acc_match.group(1) if acc_match else "Not found"
+
+    #Billing Cycle 
+    cycle_pattern = r'Opening/Closing Date\s*([\d/]+)\s*–\s*([\d/]+)'
+    cycle_match = re.search(cycle_pattern, text)
+    billing_cycle = f"{cycle_match.group(1)} - {cycle_match.group(2)}" if cycle_match else "Not found"
+
+    #Payment Due Date
+    due_pattern = r'Payment Due Date:?[\s]*([\d/]+)'
+    due_match = re.search(due_pattern, text)
+    due_date = due_match.group(1) if due_match else "Not found"
+
+    #Total Balance
+    balance_pattern = r'New Balance:?\s*\$?([\d,\.]+)'
+    balance_match = re.search(balance_pattern, text)
+    total_balance = balance_match.group(1) if balance_match else "Not found"
+
+    #First Transaction 
+    transaction = "Not found"
+
+    return {
+        "Account Number": account_number,
+        "Billing Cycle": billing_cycle,
+        "Due Date": due_date,
+        "Total Balance": total_balance,
+        "First Transaction": transaction
+    }
+
+#Extraction
+statement_text = ""
+with pdfplumber.open(pdf_file) as pdf:
+    for page in pdf.pages:
+        page_text = page.extract_text()
+        if page_text:
+            statement_text += page_text + "\n"
+
+parsed_data = extract_data(statement_text)
+print("--- Parsed Credit Card Statement Data ---")
+for key, value in parsed_data.items():
+    print(f"{key}: {value}")
